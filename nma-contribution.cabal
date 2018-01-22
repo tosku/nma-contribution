@@ -1,0 +1,72 @@
+-- This file has been generated from package.yaml by hpack version 0.20.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 37d4b862fd5015f62aa7ae58bc9eeb86512bb2876bfd736a2273a107acb2a9ac
+
+name:           nma-contribution
+version:        0.1.0.0
+description:    Please see the README on Github at <https://github.com/tpapak/nma-contribution#readme>
+homepage:       https://github.com/tpapak/nma-contribution#readme
+bug-reports:    https://github.com/tpapak/nma-contribution/issues
+author:         Thodoris Papakonstantinou
+maintainer:     mail@tpapak.com
+copyright:      2018 Thodoris Papakonstantinou
+license:        GPL-3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/tpapak/nma-contribution
+
+library
+  hs-source-dirs:
+      src
+  build-depends:
+     base >=4.7 && <5
+   , aeson
+   , bytestring
+   , aeson-pretty
+   , containers
+   , text
+   , split
+   , graph
+  exposed-modules:
+      Data.NMA
+    --, Data.NMA.Contribution
+  --other-modules:
+  default-language: Haskell2010
+
+executable nma-contribution-exe
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , nma-contribution
+  --other-modules:
+  default-language: Haskell2010
+
+test-suite nma-contribution-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , nma-contribution
+    , tesths
+    , aeson
+    , containers
+   , bytestring
+  other-modules:
+      Test.NMA
+  default-language: Haskell2010

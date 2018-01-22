@@ -1,0 +1,22 @@
+packages:
+- .
+resolver: lts-10.3
+
+#compiler: ghcjs-0.2.1.9007019_ghc-8.0.1
+#compiler-check: match-exact
+
+#setup-info:
+  #ghcjs:
+    #source:
+      #ghcjs-0.2.1.9007019_ghc-8.0.1:
+           #url: http://ghcjs.tolysz.org/ghc-8.0-2017-02-05-lts-7.19-9007019.tar.gz
+           #sha1: d2cfc25f9cda32a25a87d9af68891b2186ee52f9
+
+extra-deps:
+- git: git@github.com:tosku/graph
+  commit: e5a6b7c9aadb19ad08e925ff9c3d73c9b92d8d4c
+- git: git@github.com:tosku/tesths
+  commit: 0fb1ba49641e87b843556cd1441240ef602fcf2b
+- Unique-0.4.7.2
+- natural-numbers-0.1.2.0
+allow-newer: true
