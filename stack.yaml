@@ -14,7 +14,7 @@ resolver: lts-10.3
 
 extra-deps:
 - git: git@github.com:tosku/graph
-  commit: e5a6b7c9aadb19ad08e925ff9c3d73c9b92d8d4c
+  commit: a0e3cd3b21800e4a54d896c7ca5add59b3a0b86b
 - git: git@github.com:tosku/tesths
   commit: 0fb1ba49641e87b843556cd1441240ef602fcf2b
 - Unique-0.4.7.2

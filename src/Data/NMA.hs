@@ -2,7 +2,13 @@
 
 module Data.NMA
   ( HatMatrix
+  , HatMatrixRaw
+  , HatMatrixRow
+  , hatMatrixFromList
+  , rowNames
   , ComparisonId (..)
+  , this
+  , that
   , TreatmentId (..)
   ) where
 
@@ -13,12 +19,15 @@ import           Data.Aeson.Types
 import qualified Data.Text as T
 import qualified Data.Text.Read as TR
 import Data.List.Split
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
 
 data TreatmentId = IntId Int
                  | StringId String 
-  deriving (Show,Generic,Read,Ord,Eq)
+  deriving (Generic,Read,Ord,Eq)
+instance Show TreatmentId where
+  show (IntId tid) = show tid
+  show (StringId tid) = tid
 instance ToJSON TreatmentId
 instance FromJSON TreatmentId 
   where
@@ -30,21 +39,10 @@ instance FromJSON TreatmentId
        in (\v -> outint v <|> outstr v)
 
 data ComparisonId = ComparisonId TreatmentId TreatmentId
-  deriving (Show,Generic)
-instance Eq ComparisonId where
-  (==) (ComparisonId a b)
-       (ComparisonId c d) =
-    (a == c && b == d) ||
-    (a == d && b == c)
-instance Ord ComparisonId where
-  compare (ComparisonId a b) (ComparisonId c d) =
-    let mina = (min a b)
-        minb = (min c d)
-        maxa = (max a b)
-        maxb = (max c d)
-     in if mina /= minb 
-           then compare mina minb 
-           else compare maxa maxb 
+  deriving (Generic,Eq,Ord)
+instance Show ComparisonId where
+  show (ComparisonId a b) = 
+     show a ++ ":" ++ show b
 instance ToJSON ComparisonId
 instance FromJSON ComparisonId 
   where
@@ -62,6 +60,11 @@ instance FromJSON ComparisonId
                       in return $ ComparisonId (textToTid (head comps)) (textToTid (last comps))
        in (\v -> compstr v)
 
+this :: ComparisonId -> TreatmentId
+this (ComparisonId a b) = a
+
+that :: ComparisonId -> TreatmentId
+that (ComparisonId a b) = b
 
 data HElement = HElement { row :: ComparisonId
                          , comparison :: ComparisonId
@@ -71,5 +74,18 @@ data HElement = HElement { row :: ComparisonId
 instance FromJSON HElement
 instance ToJSON HElement
 
-{-type HatMatrix = Map.Map ComparisonId (Map.Map ComparisonId HElement)-}
-type HatMatrix = [HElement]
+type HatMatrixRaw = [HElement]
+type HatMatrixRow = Map.Map ComparisonId Double
+type HatMatrix = Map.Map ComparisonId HatMatrixRow
+
+hatMatrixFromList :: HatMatrixRaw -> HatMatrix
+hatMatrixFromList hmr =
+  let hml = 
+        map (\he -> 
+          (row he, Map.singleton (comparison he) (value he))) hmr
+   in Map.fromListWith Map.union hml
+
+rowNames :: HatMatrix -> [String]
+rowNames hm =
+  map show $ Map.keys hm
+
