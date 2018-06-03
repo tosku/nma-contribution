@@ -51,6 +51,11 @@ executable nma-contribution-exe
   build-depends:
       base >=4.7 && <5
     , nma-contribution
+    , aeson
+    , graph
+    , bytestring
+    , tesths
+    , containers
   --other-modules:
   default-language: Haskell2010
 

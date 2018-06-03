@@ -2,6 +2,7 @@ packages:
 - .
 resolver: lts-10.3
 
+#resolver: lts-7.19
 #compiler: ghcjs-0.2.1.9007019_ghc-8.0.1
 #compiler-check: match-exact
 
@@ -14,7 +15,8 @@ resolver: lts-10.3
 
 extra-deps:
 - git: git@github.com:tosku/graph
-  commit: a0e3cd3b21800e4a54d896c7ca5add59b3a0b86b
+  commit: 0ba2a49f9c23a092d7f4bc815a21f46ba632e07c
+  #commit: 03d51b14e777cd32a4643615ccce0652572eb77c
 - git: git@github.com:tosku/tesths
   commit: 0fb1ba49641e87b843556cd1441240ef602fcf2b
 - Unique-0.4.7.2

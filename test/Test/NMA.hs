@@ -1,17 +1,17 @@
 module Test.NMA where
 
-import Data.Maybe
+import           Data.Maybe
 
 import           Data.Aeson
-import qualified Data.ByteString.Lazy  as B
-import qualified Data.Map.Strict as Map
-import Data.Graph.AdjacencyList
-import Data.Graph.AdjacencyList.Network
+import qualified Data.ByteString.Lazy             as B
+import           Data.Graph.AdjacencyList
+import           Data.Graph.AdjacencyList.Network
+import qualified Data.Map.Strict                  as Map
 
-import TestHS
+import           TestHS
 
-import Data.NMA
-import Data.NMA.Contribution
+import           Data.NMA
+import           Data.NMA.Contribution
 
 {-fastTests :: [Test]-}
 {-fastTests = [ -}
@@ -53,7 +53,7 @@ test2 = do
       let hatmatrix = hatMatrixFromList hmraw
       {-let comp = ComparisonId (IntId 1) (IntId 2)-}
       {-let comp = ComparisonId (StringId "ICS") (StringId "LABA") -}
-      let comp = ComparisonId (StringId "agom") (StringId "amit") 
+      let comp = ComparisonId (StringId "agom") (StringId "amit")
       let row = fromJust $ Map.lookup comp hatmatrix
       let mhmgraph = hmGraph' hatmatrix comp
       case mhmgraph of
@@ -121,7 +121,7 @@ test5 = do
       {-putStrLn $ show contsums-}
       case all (\c -> abs (c-1) < 0.001) contsums of
         False -> return $ testFailed name $ ("all 1s", show contsums)
-        True -> return $ testPassed name $ "passed!"
+        True  -> return $ testPassed name $ "passed!"
 
 test6 :: IO Test
 test6 = do
@@ -134,7 +134,7 @@ test6 = do
     Left err -> return $ testFailed name $ ("error json parse",err)
     Right hmraw -> do
       let hatmatrix = hatMatrixFromList hmraw
-      let firsthmgraph = fromJust $ hmGraph' hatmatrix (fst ( fromJust ( Map.lookupMin hatmatrix)))
+      let firsthmgraph = fromJust $ hmGraph' hatmatrix (fst (head $ Map.toList hatmatrix))
       let hmgraph = contributionRow findAStream firsthmgraph
       let getflows hgr = Map.map (\f->fromRational f::Double) (flow $ network $ hgr)
       let allFlowsAreSmall fls = all (\f -> f < threshold) fls
