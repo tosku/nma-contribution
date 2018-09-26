@@ -2,14 +2,18 @@
 
 module Data.NMA.Contribution
   ( hmGraph'
-  , mapHMGraph'
+  , mapHMGraph
+  -- * Get stream by following the first neighbor
   , findAStream
+  -- * Get shortest path stream
+  , shortestStream
   , contributionRow
   , sumContributionRow
   , contributionMatrix
   , HMGraph (..)
   , ContributionRow
   , ContributionMatrix
+  , Stream
   ) where
 
 import Data.Maybe
@@ -20,7 +24,7 @@ import qualified Data.IntMap.Strict as IM
 import Data.NMA
 import Data.Graph.AdjacencyList
 import Data.Graph.AdjacencyList.Network
-import Data.Graph.AdjacencyList.BFS
+import qualified Data.Graph.AdjacencyList.BFS as BFS
 
 type Contribution = Flow
 
@@ -28,6 +32,7 @@ type ContributionRow = Map.Map ComparisonId Contribution
 
 type ContributionMatrix = Map.Map ComparisonId ContributionRow
 
+-- | The graph representing a row of a hatmatrix
 data HMGraph = 
   HMGraph { row :: ComparisonId
           , network :: Network
@@ -36,11 +41,18 @@ data HMGraph =
           , contribution :: ContributionRow
           , streams :: [Stream]
           }
-          deriving (Show,Eq)
+          deriving (Eq)
+instance Show HMGraph where
+  show hgr = "comparison " <> (show $ row hgr) <> " \n"
+           <> "network " <> (show $ network hgr) <> " \n"
+           <> "contribution " <> 
+             (show $ (fmap (\c -> fromRational c :: Double) (contribution hgr)))
+             <> " \n"
+           <> "streams " <> show (streams hgr)
 
 -- | Turn hatmatrix into a Network (graph with flow).
--- |Edges respect the sign of the h matrix elements
--- | with capacity and flow equal to its absolute 
+-- Edges respect the sign of the h matrix elements
+-- with capacity and flow equal to its absolute 
 hmGraph' :: HatMatrix -> ComparisonId -> Maybe HMGraph
 hmGraph' hm cid =
   let mhmr = Map.lookup cid hm
@@ -75,9 +87,9 @@ hmGraph' hm cid =
                              , streams = []
                              })
 
--- | Reduces a hatmatrix to the corresponding list of the reduces networks
-mapHMGraph' :: HatMatrix -> [HMGraph]
-mapHMGraph' hm =
+-- | Converts a hatmatrix to the corresponding list of the reduced networks
+mapHMGraph :: HatMatrix -> [HMGraph]
+mapHMGraph hm =
   let rows = Map.keys hm
    in map (\r -> fromJust $ hmGraph' hm r) rows
 
@@ -87,10 +99,16 @@ edgeToComparisonId hmgr (Edge u v) =
   let treat x = fromJust $ IM.lookup x (vsts hmgr)
    in ComparisonId (treat u) (treat v)
 
+-- | Stores path and flow
 data Stream = Stream { path :: [Edge]
                      , φ :: Flow
                      }
-                     deriving (Show,Eq)
+                     deriving (Eq)
+instance Show Stream where
+  show (Stream p φ) =
+    let f = fromRational φ :: Double
+     in "path: " <> (show p) 
+        <> "flow: " <> (show f) <> "\n" 
 
 -- | Removes edges from HMGraph
 removeEdges :: HMGraph -> [Edge] -> HMGraph
@@ -143,6 +161,33 @@ findAStream hgr =
                                in getStream newStream nextVertex
              in getStream emptyStream s
 
+-- | Get the shortest stream
+shortestStream :: HMGraph -> Maybe Stream
+shortestStream hgr = 
+  let ntw = network hgr
+      g = graph ntw
+      s = source ntw
+      t = sink ntw
+      bfsearch = BFS.bfs g s
+      shortestPath :: Vertex -> [Edge] -> [Edge]
+      shortestPath v pth = 
+        let mnextVertex = IM.lookup v $ BFS.parent bfsearch
+         in if v == s || mnextVertex == Nothing 
+           then pth
+           else
+             let nextVertex = fromJust mnextVertex
+                 nextEdge = Edge nextVertex v
+                 newPath = nextEdge : pth
+              in shortestPath nextVertex newPath
+      shpath = shortestPath t []
+      minfl = minimumFlow hgr shpath
+      stream = Stream shpath minfl 
+   in if null shpath
+         then Nothing
+         else Just stream
+
+
+
 updateFlow :: HMGraph -> Stream -> Map.Map Edge Flow
 updateFlow hgr strm =
   let ntw = network hgr
@@ -171,34 +216,36 @@ updateContribution hgr strm =
 
 
 -- | Main algorithm for computing the contribution of the row by 
--- |iteratively removing Streams given an algorithm to locate streams and a
--- |HMGraph
+-- iteratively removing Streams given an algorithm to locate streams and a
+-- HMGraph
 contributionRow :: (HMGraph -> Maybe Stream) -> HMGraph -> HMGraph
 contributionRow getStream hmgraph =
   let reduceGraph :: HMGraph -> HMGraph
       reduceGraph !hgr =
-        let ntw = network hgr
-            g = graph ntw
-            s = source ntw
-            t = sink ntw
-            mstream = getStream hgr
-         in case mstream of
-              Nothing -> hgr
-              Just newStream -> 
-                let newFlow = updateFlow hgr newStream
-                    newContribution = updateContribution hgr newStream
-                    newHMGraph = 
-                      let emptyEdges = map fst $
-                            filter (\(e,f) -> f == 0) $
-                                map (\e -> 
-                                  (e, fromJust $ Map.lookup e (newFlow))) (path newStream)
-                          !rhgr = removeEdges hgr emptyEdges
-                       in rhgr { network = (network rhgr) {flow = newFlow}
-                               , contribution = newContribution
-                               , streams = (streams rhgr) ++ [newStream]
-                               }
-                 in reduceGraph newHMGraph 
-                {-in newHMGraph -}
+        --if length (streams hgr) > 100000 -- not termination safety measure
+           --then hgr
+           --else
+              let ntw = network hgr
+                  g = graph ntw
+                  s = source ntw
+                  t = sink ntw
+                  mstream = getStream hgr
+               in case mstream of
+                    Nothing -> hgr
+                    Just newStream -> 
+                      let newFlow = updateFlow hgr newStream
+                          newContribution = updateContribution hgr newStream
+                          newHMGraph = 
+                            let emptyEdges = map fst $
+                                  filter (\(e,f) -> f == 0) $
+                                      map (\e -> 
+                                        (e, fromJust $ Map.lookup e (newFlow))) (path newStream)
+                                !rhgr = removeEdges hgr emptyEdges
+                             in rhgr { network = (network rhgr) {flow = newFlow}
+                                     , contribution = newContribution
+                                     , streams = (streams rhgr) ++ [newStream]
+                                     }
+                       in reduceGraph newHMGraph 
   in reduceGraph hmgraph
 
 sumContributionRow :: ContributionRow -> Double

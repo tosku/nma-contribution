@@ -139,7 +139,7 @@ test6 = do
       let hmgraph = contributionRow findAStream firsthmgraph
       let getflows hgr = Map.map (\f->fromRational f::Double) (flow $ network $ hgr)
       let allFlowsAreSmall fls = all (\f -> f < threshold) fls
-      let conmat = map (\hgr -> contributionRow findAStream hgr) (mapHMGraph' hatmatrix)
+      let conmat = map (\hgr -> contributionRow findAStream hgr) (mapHMGraph hatmatrix)
       let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
       case checkzeroflow of
         True -> return $ testPassed name $ "passed!"

@@ -1,6 +1,6 @@
 packages:
 - .
-resolver: lts-10.3
+resolver: lts-12.10
 
 #resolver: lts-7.19
 #compiler: ghcjs-0.2.1.9007019_ghc-8.0.1
@@ -14,11 +14,13 @@ resolver: lts-10.3
            #sha1: d2cfc25f9cda32a25a87d9af68891b2186ee52f9
 
 extra-deps:
-- git: git@github.com:tosku/graph
-  commit: 0ba2a49f9c23a092d7f4bc815a21f46ba632e07c
-  #commit: 03d51b14e777cd32a4643615ccce0652572eb77c
-- git: git@github.com:tosku/tesths
+- git: https://github.com/tosku/graph
+  commit: e819b5cffce840976d5c8b87f9678ac7a0db8c8d
+#- ../graph
+- git: https://github.com/tosku/tesths
   commit: 0fb1ba49641e87b843556cd1441240ef602fcf2b
+- git: https://github.com/tosku/prng
+  commit: 3f93c3a3afc032212e101197c8f8b7d00c5772f3 
 - Unique-0.4.7.2
 - natural-numbers-0.1.2.0
 allow-newer: true

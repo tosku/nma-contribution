@@ -25,6 +25,8 @@ ioTests = [ test1
           , test4
           , test5
           , test6
+          , test7
+          , test8
           ]
 
 test1 :: IO Test
@@ -37,7 +39,7 @@ test1 = do
     Left err -> return $ testFailed name $ ("error json parse",err)
     Right hmrow -> do
       let hatmatrix = hatMatrixFromList hmrow
-      putStrLn "row names"
+      --putStrLn "row names"
       return $ testPassed name $ "passed!"
 
 test2 :: IO Test
@@ -59,7 +61,7 @@ test2 = do
       case mhmgraph of
         Nothing -> return $ testFailed name $ ("didn't find row", show comp)
         Just hmgraph -> do
-            putStrLn "HMGraph"
+            --putStrLn "HMGraph"
             {-putStrLn $ show hmgraph-}
             return $ testPassed name $ "passed!"
 
@@ -80,7 +82,7 @@ test3 = do
         Nothing -> return $ testFailed name $ ("didn't find row", show comp)
         Just hmgraph -> do
           let str = findAStream hmgraph
-          putStrLn $ show str
+          --putStrLn $ show str
           return $ testPassed name $ "passed!"
 
 test4 :: IO Test
@@ -101,8 +103,8 @@ test4 = do
         Just hmgraph -> do
           let cr = contributionRow findAStream hmgraph
           let contrsum = fromRational $ sum $ map snd $ Map.toList (contribution cr) :: Double
-          putStrLn $ show cr
-          putStrLn $ show contrsum
+          --putStrLn $ show cr
+          --putStrLn $ show contrsum
           return $ testPassed name $ "passed!"
 
 test5 :: IO Test
@@ -134,12 +136,51 @@ test6 = do
     Left err -> return $ testFailed name $ ("error json parse",err)
     Right hmraw -> do
       let hatmatrix = hatMatrixFromList hmraw
-      let firsthmgraph = fromJust $ hmGraph' hatmatrix (fst (head $ Map.toList hatmatrix))
-      let hmgraph = contributionRow findAStream firsthmgraph
-      let getflows hgr = Map.map (\f->fromRational f::Double) (flow $ network $ hgr)
       let allFlowsAreSmall fls = all (\f -> f < threshold) fls
-      let conmat = map (\hgr -> contributionRow findAStream hgr) (mapHMGraph' hatmatrix)
+      let conmat = map (\hgr -> contributionRow findAStream hgr) (mapHMGraph hatmatrix)
       let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
       case checkzeroflow of
         True -> return $ testPassed name $ "passed!"
         False -> return $ testFailed name $ ("not all small", show checkzeroflow)
+
+test7 :: IO Test
+test7 = do
+  let threshold = 0.0006
+  let name = "Checking first path streams. Flows should be less than " ++ (show $ (fromRational threshold :: Double)) ++ " (Leucht)"
+  let hmat = "test/Leuchthat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let allFlowsAreSmall fls = all (\f -> f < threshold) fls
+      let conmat = map (\hgr -> contributionRow findAStream hgr) (mapHMGraph hatmatrix)
+      let allflows = map (\hgr -> Map.map (\f -> fromRational f :: Double) (flow $ network $ hgr)) conmat
+      let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
+      let firstrow = head conmat
+      case checkzeroflow of
+        --True -> return $ testPassed name $ "passed!"
+        True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        False -> return $ testFailed name $ ("not all small", show $ firstrow)
+
+test8 :: IO Test
+test8 = do
+  let threshold = 0.0006
+  let name = "Checking shortest path streams. Flows should be less than " ++ (show $ (fromRational threshold :: Double)) ++ " (Leucht)"
+  let hmat = "test/Leuchthat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let allFlowsAreSmall fls = all (\f -> f < threshold) fls
+      let conmat = map (\hgr -> contributionRow shortestStream hgr) (mapHMGraph hatmatrix)
+      let allflows = map (\hgr -> Map.map (\f -> fromRational f :: Double) (flow $ network $ hgr)) conmat
+      let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
+      let firstrow = head conmat
+      case checkzeroflow of
+        --True -> return $ testPassed name $ "passed!"
+        True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        False -> return $ testFailed name $ ("not all small", show $ firstrow)
