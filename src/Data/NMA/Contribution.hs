@@ -7,6 +7,8 @@ module Data.NMA.Contribution
   , findAStream
   -- * Get shortest path stream
   , shortestStream
+  -- * Get longest path stream
+  , longestStream
   , contributionRow
   , sumContributionRow
   , contributionMatrix
@@ -25,6 +27,7 @@ import Data.NMA
 import Data.Graph.AdjacencyList
 import Data.Graph.AdjacencyList.Network
 import qualified Data.Graph.AdjacencyList.BFS as BFS
+import qualified Data.Graph.AdjacencyList.DFS as DFS
 
 type Contribution = Flow
 
@@ -186,6 +189,19 @@ shortestStream hgr =
          then Nothing
          else Just stream
 
+-- | Get the longest stream
+longestStream :: HMGraph -> Maybe Stream
+longestStream hgr = 
+  let ntw = network hgr
+      g = graph ntw
+      s = source ntw
+      t = sink ntw
+      lpath = DFS.longestPath g s t
+      minfl = minimumFlow hgr lpath
+      stream = Stream lpath minfl 
+   in if null lpath
+         then Nothing
+         else Just stream
 
 
 updateFlow :: HMGraph -> Stream -> Map.Map Edge Flow
@@ -197,7 +213,11 @@ updateFlow hgr strm =
       phi = φ strm
       oldflow = flow ntw
       newflow = foldl' (\ac e -> 
-        Map.adjust (\ofl -> (-) ofl phi) e ac) oldflow pth
+        Map.adjust (\ofl -> 
+          let newflow = ofl - phi
+           in if newflow < (1e-8)
+                 then 0
+                 else newflow) e ac) oldflow pth
    in newflow
 
 updateContribution :: HMGraph -> Stream -> ContributionRow
@@ -213,7 +233,6 @@ updateContribution hgr strm =
         pth = path strm
         l = fromIntegral $ length pth
         phi = φ strm
-
 
 -- | Main algorithm for computing the contribution of the row by 
 -- iteratively removing Streams given an algorithm to locate streams and a

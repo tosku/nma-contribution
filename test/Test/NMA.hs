@@ -6,6 +6,7 @@ import           Data.Aeson
 import qualified Data.ByteString.Lazy             as B
 import           Data.Graph.AdjacencyList
 import           Data.Graph.AdjacencyList.Network
+import           Data.Graph.AdjacencyList.DFS as DFS
 import qualified Data.Map.Strict                  as Map
 
 import           TestHS
@@ -22,11 +23,15 @@ ioTests :: [IO Test]
 ioTests = [ test1
           , test2
           , test3
-          , test4
+          , testdiabetes4
           , test5
           , test6
           , test7
           , test8
+          , testlongest
+          , testlongest2
+          , testlongest3
+          , testlongest4
           ]
 
 test1 :: IO Test
@@ -85,9 +90,9 @@ test3 = do
           --putStrLn $ show str
           return $ testPassed name $ "passed!"
 
-test4 :: IO Test
-test4 = do
-  let name = "contributionrow with findAStream"
+testdiabetes4 :: IO Test
+testdiabetes4 = do
+  let name = "contributionrow with shortestStream"
   let hmat = "test/diabetes_indrhat.json"
   let getJSON = B.readFile hmat
   ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
@@ -101,7 +106,7 @@ test4 = do
       case mhmgraph of
         Nothing -> return $ testFailed name $ ("didn't find row", show comp)
         Just hmgraph -> do
-          let cr = contributionRow findAStream hmgraph
+          let cr = contributionRow shortestStream hmgraph
           let contrsum = fromRational $ sum $ map snd $ Map.toList (contribution cr) :: Double
           --putStrLn $ show cr
           --putStrLn $ show contrsum
@@ -127,7 +132,7 @@ test5 = do
 
 test6 :: IO Test
 test6 = do
-  let threshold = 0.00081
+  let threshold = 0.0008
   let name = "Flows should be less than " ++ (show $ (fromRational threshold :: Double)) ++ " (Leucht)"
   let hmat = "test/Leuchthat.json"
   let getJSON = B.readFile hmat
@@ -160,8 +165,8 @@ test7 = do
       let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
       let firstrow = head conmat
       case checkzeroflow of
-        --True -> return $ testPassed name $ "passed!"
-        True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        True -> return $ testPassed name $ "passed!"
+        --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
         False -> return $ testFailed name $ ("not all small", show $ firstrow)
 
 test8 :: IO Test
@@ -180,7 +185,121 @@ test8 = do
       let allflows = map (\hgr -> Map.map (\f -> fromRational f :: Double) (flow $ network $ hgr)) conmat
       let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
       let firstrow = head conmat
+      let contrsums = show $ map (\r -> (row r,fromRational $ sum (contribution r))) conmat
+      let numstreams = show $ map (\r -> (row r,length (streams r))) conmat
+      let probrow = head $ filter (\r -> row r == (ComparisonId (IntId 1) (IntId 5))) conmat
       case checkzeroflow of
-        --True -> return $ testPassed name $ "passed!"
-        True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        True -> return $ testPassed name $ "passed!"
+        --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        --True -> return $ testPassed name $ ((show contrsums) <>"\n" <> (show probrow)
+                  -- <>"\n" <> (show $ probrow)
+                                           --)
         False -> return $ testFailed name $ ("not all small", show $ firstrow)
+
+
+testlongest :: IO Test
+testlongest = do
+  let threshold = 0.0002
+  let name = "Checking longest path streams. Flows should be less than " ++ (show $ (fromRational threshold :: Double)) ++ " (diabetes)"
+  let hmat = "test/diabetes_indrhat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let allFlowsAreSmall fls = all (\f -> f < threshold) fls
+      let conmat = map (\hgr -> contributionRow longestStream hgr) (mapHMGraph hatmatrix)
+      let allflows = map (\hgr -> Map.map (\f -> fromRational f :: Double) (flow $ network $ hgr)) conmat
+      let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
+      let firstrow = head conmat
+      let wrongRow = filter (\row -> not $ allFlowsAreSmall (flow $ network row) ) conmat
+      let contrsums = show $ map (\r -> (row r,fromRational $ sum (contribution r))) conmat
+      let flowsums = show $ map (\r -> (row r,fromRational $ sum (flow $ network r))) conmat
+      let numstreams = show $ map (\r -> (row r,length (streams r))) conmat
+      let probrow = head $ filter (\r -> row r == (ComparisonId (IntId 1) (IntId 5))) conmat
+      case checkzeroflow of
+        True -> return $ testPassed name $ "passed!"
+        --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        False -> return $ testFailed name $ ("not all small", (show contrsums)
+                   <>"\n" <> (show $ probrow)
+                                            )
+
+testlongest2 :: IO Test
+testlongest2 = do
+  let threshold = 0.0006
+  let name = "Checking longest path streams. Flows should be less than " ++ (show $ (fromRational threshold :: Double)) ++ " (Leucht)"
+  let hmat = "test/Leuchthat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let allFlowsAreSmall fls = all (\f -> f < threshold) fls
+      let conmat = map (\hgr -> contributionRow longestStream hgr) (mapHMGraph hatmatrix)
+      let allflows = map (\hgr -> Map.map (\f -> fromRational f :: Double) (flow $ network $ hgr)) conmat
+      let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
+      let firstrow = head conmat
+      let wrongRow = filter (\row -> not $ allFlowsAreSmall (flow $ network row) ) conmat
+      let contrsums = show $ map (\r -> (row r,fromRational $ sum (contribution r))) conmat
+      let flowsums = show $ map (\r -> (row r,fromRational $ sum (flow $ network r))) conmat
+      let numstreams = show $ map (\r -> (row r,length (streams r))) conmat
+      let probrow = head $ filter (\r -> row r == (ComparisonId (IntId 1) (IntId 5))) conmat
+      case checkzeroflow of
+        True -> return $ testPassed name $ "passed!"
+        --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        False -> return $ testFailed name $ ("not all small", (show contrsums)
+                   <>"\n" <> (show $ probrow)
+                                            )
+
+testlongest3 :: IO Test
+testlongest3 = do
+  let threshold = 0.0008
+  let name = "Checking longest path streams. Flows should be less than " ++ (show $ (fromRational threshold :: Double)) ++ " (grizelda)"
+  let hmat = "test/big_widehat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let allFlowsAreSmall fls = all (\f -> f < threshold) fls
+      let conmat = map (\hgr -> contributionRow longestStream hgr) (mapHMGraph hatmatrix)
+      let allflows = map (\hgr -> Map.map (\f -> fromRational f :: Double) (flow $ network $ hgr)) conmat
+      let checkzeroflow = all id $ map (\hgr -> allFlowsAreSmall (flow $ network $ hgr)) conmat
+      let firstrow = head conmat
+      let wrongRow = filter (\row -> not $ allFlowsAreSmall (flow $ network row) ) conmat
+      let contrsums = show $ map (\r -> (row r,fromRational $ sum (contribution r))) conmat
+      let flowsums = show $ map (\r -> (row r,fromRational $ sum (flow $ network r))) conmat
+      let numstreams = show $ map (\r -> (row r,length (streams r))) conmat
+      let probrow = head $ filter (\r -> row r == (ComparisonId (IntId 1) (IntId 5))) conmat
+      case checkzeroflow of
+        True -> return $ testPassed name $ "passed!"
+        --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        False -> return $ testFailed name $ ("not all small", (show contrsums)
+                   <>"\n" <> (show $ probrow)
+                                            )
+
+testlongest4 :: IO Test
+testlongest4 = do
+  let threshold = 0.0008 :: Double
+  let name = "Checking longest path streams. contributions should be above " ++ (show $1.0-threshold) ++ " (grizelda)"
+  let hmat = "test/big_widehat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let conmat = contributionMatrix findAStream hatmatrix
+      let contsums = Map.map sumContributionRow conmat
+      let isOne :: Double -> Bool
+          isOne = (\c -> c > (1.0 - threshold))
+      let checkallOne = all isOne contsums
+      let problematics = Map.filter (not . isOne) contsums
+      case checkallOne of
+        True -> return $ testPassed name $ "passed!"
+        --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
+        False -> return $ testFailed name $ ("not all small", (show problematics)
+                                            )

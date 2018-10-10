@@ -15,7 +15,7 @@ resolver: lts-12.10
 
 extra-deps:
 - git: https://github.com/tosku/graph
-  commit: e819b5cffce840976d5c8b87f9678ac7a0db8c8d
+  commit: 79485ff90e2e517e28428b11d5af7254ff97b8b0
 #- ../graph
 - git: https://github.com/tosku/tesths
   commit: 0fb1ba49641e87b843556cd1441240ef602fcf2b
