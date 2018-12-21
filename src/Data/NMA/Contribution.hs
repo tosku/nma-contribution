@@ -11,6 +11,7 @@ module Data.NMA.Contribution
   , longestStream
   , contributionRow
   , sumContributionRow
+  , conmatFromConRows
   , contributionMatrix
   , HMGraph (..)
   , ContributionRow
@@ -203,7 +204,6 @@ longestStream hgr =
          then Nothing
          else Just stream
 
-
 updateFlow :: HMGraph -> Stream -> Map.Map Edge Flow
 updateFlow hgr strm =
   let ntw = network hgr
@@ -270,10 +270,16 @@ contributionRow getStream hmgraph =
 sumContributionRow :: ContributionRow -> Double
 sumContributionRow cr = fromRational $ sum $ map snd $ Map.toList cr
 
+-- | Makes list of contribution rows to a map (ContributionMatrix type)
+conmatFromConRows :: [HMGraph] -> ContributionMatrix
+conmatFromConRows conrows = Map.fromList $
+      map (\cr -> (row cr, contribution cr)) conrows
+
 contributionMatrix :: (HMGraph -> Maybe Stream) -> HatMatrix -> ContributionMatrix
 contributionMatrix streamAlgo hatmatrix =
   let rows = Map.keys hatmatrix
       hmgraphs = map (\r -> fromJust $ hmGraph' hatmatrix r) rows
       contributionRows = map (contributionRow streamAlgo) hmgraphs
-   in Map.fromList $
-     map (\cr -> (row cr, contribution cr)) contributionRows
+   in conmatFromConRows contributionRows
+
+
