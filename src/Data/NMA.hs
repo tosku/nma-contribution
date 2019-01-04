@@ -3,9 +3,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.NMA
-  ( HatMatrix
-  , HatMatrixRaw
-  , HatMatrixRow
+  ( HatMatrix (..)
+  , HatMatrixRaw (..)
+  , HatMatrixRow (..)
   , hatMatrixFromList
   , rowNames
   , ComparisonId (..)
@@ -46,6 +46,7 @@ instance Show ComparisonId where
   show (ComparisonId a b) =
      show a ++ ":" ++ show b
 instance ToJSON ComparisonId
+instance ToJSONKey ComparisonId
 instance FromJSON ComparisonId
   where
     parseJSON = do
