@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.NMA
@@ -45,8 +44,8 @@ data ComparisonId = ComparisonId TreatmentId TreatmentId
 instance Show ComparisonId where
   show (ComparisonId a b) =
      show a ++ ":" ++ show b
-instance ToJSON ComparisonId
 instance ToJSONKey ComparisonId
+instance ToJSON ComparisonId
 instance FromJSON ComparisonId
   where
     parseJSON = do

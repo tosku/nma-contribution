@@ -14,13 +14,14 @@ module Data.NMA.Contribution
   , conmatFromConRows
   , contributionMatrix
   , HMGraph (..)
-  , ContributionRow
-  , ContributionMatrix
+  , ContributionRow (..)
+  , ContributionMatrix (..)
   , Stream
   ) where
 
 import Data.Maybe
 import Data.List
+import Data.Aeson
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.IntMap.Strict as IM
@@ -34,7 +35,20 @@ type Contribution = Flow
 
 type ContributionRow = Map.Map ComparisonId Contribution
 
-type ContributionMatrix = Map.Map ComparisonId ContributionRow
+newtype ContributionMatrix = ContributionMatrix (Map.Map ComparisonId ContributionRow)
+  deriving (Show, Eq, Ord)
+instance ToJSON ContributionMatrix where
+  toJSON (ContributionMatrix (cm)) = 
+    object ["contributionmatrix" .= 
+	     (map (\((ComparisonId u v), cr) -> 
+	      	map (\((ComparisonId s t), cont) -> 
+		  object ["row" .= (show u <> ":" <> show v)
+			 ,"comparison" .= (show s <> ":" <> show t)
+			 ,"value" .= show (fromRational cont :: Double)])
+		$ Map.toList cr ) $ Map.toList cm)
+	      --(\k cr -> map (\(com,cont) -> object [ "row" .= k]) $ Map.toList cr ) cm
+	   ]
+    
 
 -- | The graph representing a row of a hatmatrix
 data HMGraph = 
@@ -272,7 +286,7 @@ sumContributionRow cr = fromRational $ sum $ map snd $ Map.toList cr
 
 -- | Makes list of contribution rows to a map (ContributionMatrix type)
 conmatFromConRows :: [HMGraph] -> ContributionMatrix
-conmatFromConRows conrows = Map.fromList $
+conmatFromConRows conrows = ContributionMatrix $ Map.fromList $
       map (\cr -> (row cr, contribution cr)) conrows
 
 contributionMatrix :: (HMGraph -> Maybe Stream) -> HatMatrix -> ContributionMatrix

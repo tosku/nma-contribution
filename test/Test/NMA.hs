@@ -122,7 +122,7 @@ test5 = do
     Left err -> return $ testFailed name $ ("error json parse",err)
     Right hmraw -> do
       let hatmatrix = hatMatrixFromList hmraw
-      let conmat = contributionMatrix findAStream hatmatrix
+      let ContributionMatrix conmat = contributionMatrix findAStream hatmatrix
       let contsums = Map.map sumContributionRow conmat
       putStrLn "contribution sum"
       {-putStrLn $ show contsums-}
@@ -292,7 +292,7 @@ testlongest4 = do
     Left err -> return $ testFailed name $ ("error json parse",err)
     Right hmraw -> do
       let hatmatrix = hatMatrixFromList hmraw
-      let conmat = contributionMatrix findAStream hatmatrix
+      let ContributionMatrix conmat = contributionMatrix findAStream hatmatrix
       let contsums = Map.map sumContributionRow conmat
       let isOne :: Double -> Bool
           isOne = (\c -> c > (1.0 - threshold))
