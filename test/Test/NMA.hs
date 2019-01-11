@@ -32,6 +32,7 @@ ioTests = [ test1
           , testlongest2
           , testlongest3
           , testlongest4
+          , teststreams
           ]
 
 test1 :: IO Test
@@ -303,3 +304,20 @@ testlongest4 = do
         --True -> return $ testPassed name $ "passed!" <> (show $ streams firstrow)
         False -> return $ testFailed name $ ("not all small", (show problematics)
                                             )
+
+teststreams :: IO Test
+teststreams = do
+  let name = "Streams"
+  let hmat = "test/diabetes_indrhat.json"
+  let getJSON = B.readFile hmat
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+    Left err -> return $ testFailed name $ ("error json parse",err)
+    Right hmraw -> do
+      let hatmatrix = hatMatrixFromList hmraw
+      let hatmatrix = hatMatrixFromList hmraw
+      let conrows = map (\hgr -> contributionRow findAStream hgr) (mapHMGraph hatmatrix)
+      let StreamMatrix streammat = streamMatrixFromConRows conrows
+      case Map.null streammat of
+        True -> return $ testFailed name $ ("bad streams", (show $ toJSON (StreamMatrix streammat)))
+        False -> return $ testPassed name "streams ok"

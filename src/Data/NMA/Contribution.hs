@@ -16,7 +16,11 @@ module Data.NMA.Contribution
   , HMGraph (..)
   , ContributionRow (..)
   , ContributionMatrix (..)
-  , Stream
+  , CM (..)
+  , Stream (..)
+  , StreamMatrix (..)
+  , SM (..)
+  , streamMatrixFromConRows
   ) where
 
 import Data.Maybe
@@ -30,12 +34,15 @@ import Data.Graph.AdjacencyList
 import Data.Graph.AdjacencyList.Network
 import qualified Data.Graph.AdjacencyList.BFS as BFS
 import qualified Data.Graph.AdjacencyList.DFS as DFS
+import           GHC.Generics
 
 type Contribution = Flow
 
 type ContributionRow = Map.Map ComparisonId Contribution
 
-newtype ContributionMatrix = ContributionMatrix (Map.Map ComparisonId ContributionRow)
+type CM = Map.Map ComparisonId ContributionRow
+
+newtype ContributionMatrix = ContributionMatrix CM
   deriving (Show, Eq, Ord)
 instance ToJSON ContributionMatrix where
   toJSON (ContributionMatrix (cm)) = 
@@ -121,12 +128,33 @@ edgeToComparisonId hmgr (Edge u v) =
 data Stream = Stream { path :: [Edge]
                      , φ :: Flow
                      }
-                     deriving (Eq)
+                     deriving (Eq, Ord, Generic)
 instance Show Stream where
   show (Stream p φ) =
     let f = fromRational φ :: Double
      in "path: " <> (show p) 
-        <> "flow: " <> (show f) <> "\n" 
+        <> "flow: " <> (show f)
+        <> "\n" 
+
+type SM = Map.Map ComparisonId [Stream]
+
+-- | list of streams per comparison
+data StreamMatrix = StreamMatrix SM
+                     deriving (Eq, Ord, Show)
+instance ToJSON StreamMatrix where
+  toJSON (StreamMatrix (sm)) = 
+    object ["streammatrix" .= 
+	     (map (\((ComparisonId u v), strms) -> 
+	      	map (\ st -> 
+		  object ["row" .= (show u <> ":" <> show v)
+			 ,"length" .= show (length (path st))
+			 ,"contribution" .= show (fromRational (φ st) :: Double)
+                         ]
+                    )
+		strms ) 
+             $ Map.toList sm)
+	   ]
+    
 
 -- | Removes edges from HMGraph
 removeEdges :: HMGraph -> [Edge] -> HMGraph
@@ -199,10 +227,10 @@ shortestStream hgr =
               in shortestPath nextVertex newPath
       shpath = shortestPath t []
       minfl = minimumFlow hgr shpath
-      stream = Stream shpath minfl 
+      strm = Stream shpath minfl
    in if null shpath
          then Nothing
-         else Just stream
+         else Just strm
 
 -- | Get the longest stream
 longestStream :: HMGraph -> Maybe Stream
@@ -213,10 +241,11 @@ longestStream hgr =
       t = sink ntw
       lpath = DFS.longestPath g s t
       minfl = minimumFlow hgr lpath
-      stream = Stream lpath minfl 
+      strm = Stream lpath minfl
    in if null lpath
          then Nothing
-         else Just stream
+         else Just strm
+
 
 updateFlow :: HMGraph -> Stream -> Map.Map Edge Flow
 updateFlow hgr strm =
@@ -296,4 +325,6 @@ contributionMatrix streamAlgo hatmatrix =
       contributionRows = map (contributionRow streamAlgo) hmgraphs
    in conmatFromConRows contributionRows
 
-
+streamMatrixFromConRows :: [HMGraph] -> StreamMatrix
+streamMatrixFromConRows conrows = StreamMatrix $ Map.fromList $
+      map (\cr -> (row cr, streams cr)) conrows
