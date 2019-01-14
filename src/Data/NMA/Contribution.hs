@@ -47,14 +47,14 @@ newtype ContributionMatrix = ContributionMatrix CM
 instance ToJSON ContributionMatrix where
   toJSON (ContributionMatrix (cm)) = 
     object ["contributionmatrix" .= 
-	     (map (\((ComparisonId u v), cr) -> 
-	      	map (\((ComparisonId s t), cont) -> 
-		  object ["row" .= (show u <> ":" <> show v)
-			 ,"comparison" .= (show s <> ":" <> show t)
-			 ,"value" .= show (fromRational cont :: Double)])
-		$ Map.toList cr ) $ Map.toList cm)
-	      --(\k cr -> map (\(com,cont) -> object [ "row" .= k]) $ Map.toList cr ) cm
-	   ]
+          (map (\((ComparisonId u v), cr) -> 
+               map (\((ComparisonId s t), cont) -> 
+                 object ["row" .= (show u <> ":" <> show v)
+                        ,"comparison" .= (show s <> ":" <> show t)
+                        ,"value" .= show (fromRational cont :: Double)])
+               $ Map.toList cr ) $ Map.toList cm)
+              --(\k cr -> map (\(com,cont) -> object [ "row" .= k]) $ Map.toList cr ) cm
+           ]
     
 
 -- | The graph representing a row of a hatmatrix
@@ -144,16 +144,16 @@ data StreamMatrix = StreamMatrix SM
 instance ToJSON StreamMatrix where
   toJSON (StreamMatrix (sm)) = 
     object ["streammatrix" .= 
-	     (map (\((ComparisonId u v), strms) -> 
-	      	map (\ st -> 
-		  object ["row" .= (show u <> ":" <> show v)
-			 ,"length" .= show (length (path st))
-			 ,"contribution" .= show (fromRational (φ st) :: Double)
+             (map (\((ComparisonId u v), strms) -> 
+                map (\ st -> 
+                  object ["row" .= (show u <> ":" <> show v)
+                         ,"length" .= show (length (path st))
+                         ,"contribution" .= show (fromRational (φ st) :: Double)
                          ]
                     )
-		strms ) 
+                strms ) 
              $ Map.toList sm)
-	   ]
+           ]
     
 
 -- | Removes edges from HMGraph
@@ -168,7 +168,9 @@ removeEdges hmgr res =
 minimumFlow :: HMGraph -> [Edge] -> Flow
 minimumFlow hgr path =
   let fls = map (\e -> fromJust $ Map.lookup e flows) path
-   in minimum fls
+   in if null fls
+         then 0
+         else minimum fls
   where ntw = network hgr
         flows = flow ntw
 

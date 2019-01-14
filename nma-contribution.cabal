@@ -5,7 +5,7 @@
 -- hash: 37d4b862fd5015f62aa7ae58bc9eeb86512bb2876bfd736a2273a107acb2a9ac
 
 name:           nma-contribution
-version:        0.1.0.0
+version:        0.1.1.0
 description:    Please see the README on Github at <https://github.com/tpapak/nma-contribution#readme>
 homepage:       https://github.com/tpapak/nma-contribution#readme
 bug-reports:    https://github.com/tpapak/nma-contribution/issues
