@@ -330,3 +330,4 @@ contributionMatrix streamAlgo hatmatrix =
 streamMatrixFromConRows :: [HMGraph] -> StreamMatrix
 streamMatrixFromConRows conrows = StreamMatrix $ Map.fromList $
       map (\cr -> (row cr, streams cr)) conrows
+

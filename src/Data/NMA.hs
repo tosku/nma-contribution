@@ -6,6 +6,7 @@ module Data.NMA
   , HatMatrixRaw (..)
   , HatMatrixRow (..)
   , hatMatrixFromList
+  , readHatMatrix
   , rowNames
   , ComparisonId (..)
   , this
@@ -22,6 +23,8 @@ import           Data.Maybe
 import qualified Data.Text           as T
 import qualified Data.Text.Read      as TR
 import           GHC.Generics
+import           Data.Aeson
+import qualified Data.ByteString.Lazy             as B
 
 data TreatmentId = IntId Int
                  | StringId String
@@ -91,3 +94,11 @@ rowNames :: HatMatrix -> [String]
 rowNames hm =
   map show $ Map.keys hm
 
+-- | Read hatmatrix from json file
+readHatMatrix :: String -> IO (Either String HatMatrix)
+readHatMatrix filename = do
+  let getJSON = B.readFile filename
+  ehmraw <- (eitherDecode <$> getJSON) :: IO (Either String HatMatrixRaw)
+  case ehmraw of
+      Left err -> return $ Left ("error json parsing: " <> err)
+      Right hmraw -> return $ Right $ hatMatrixFromList hmraw
