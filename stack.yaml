@@ -1,6 +1,6 @@
 packages:
 - .
-resolver: lts-13.01
+resolver: lts-14.11
 
 #resolver: lts-7.19
 #compiler: ghcjs-0.2.1.9007019_ghc-8.0.1
@@ -16,7 +16,7 @@ resolver: lts-13.01
 extra-deps:
 #- ../graph
 - git: https://github.com/tosku/graph
-  commit: 827fc93a4d432bd827ac6969087d6d7e61eda93a
+  commit: e379233a1e81225648aab8308937b7a25397a3aa
 - git: https://github.com/tosku/tesths
   commit: 0fb1ba49641e87b843556cd1441240ef602fcf2b
 - git: https://github.com/tosku/prng

@@ -36,7 +36,7 @@ library
    , containers
    , text
    , split
-   , graph
+   , graph >= 0.4.0.0
   exposed-modules:
       Data.NMA
     , Data.NMA.Contribution
@@ -52,7 +52,7 @@ executable nma-contribution-exe
       base >=4.7 && <5
     , nma-contribution
     , aeson
-    , graph
+    , graph >= 0.4.0.0
     , bytestring
     , tesths
     , containers
@@ -73,7 +73,7 @@ test-suite nma-contribution-test
     , aeson
     , containers
     , bytestring
-    , graph
+    , graph >= 0.4.0.0
   other-modules:
       Test.NMA
   default-language: Haskell2010
